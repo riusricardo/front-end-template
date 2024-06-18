@@ -2,6 +2,9 @@ import React, { useReducer, useContext, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import jsonrpc from '@polkadot/types/interfaces/jsonrpc'
 import { ApiPromise, WsProvider } from '@polkadot/api'
+
+import { ScProvider } from '@polkadot/rpc-provider/substrate-connect'
+import * as Sc from '@substrate/connect'
 import { web3Accounts, web3Enable } from '@polkadot/extension-dapp'
 import { keyring as Keyring } from '@polkadot/ui-keyring'
 import { isTestChain } from '@polkadot/util'
@@ -57,7 +60,7 @@ const reducer = (state, action) => {
 ///
 // Connecting to the Substrate node
 
-const connect = (state, dispatch) => {
+const connect = async (state, dispatch) => {
   const { apiState, socket, jsonrpc } = state
   // We only want this function to be performed once
   if (apiState) return
@@ -65,8 +68,21 @@ const connect = (state, dispatch) => {
   dispatch({ type: 'CONNECT_INIT' })
 
   console.log(`Connected socket: ${socket}`)
-  const provider = new WsProvider(socket)
-  const _api = new ApiPromise({ provider, rpc: jsonrpc })
+
+  let provider
+  let who = window.location.href.split('?')[1]
+
+  if (who === 'westend_light_client') {
+    provider = new ScProvider(Sc, Sc.WellKnownChain.westend2)
+    await provider.connect()
+  } else if (who === 'rococo_light_client') {
+    provider = new ScProvider(Sc, Sc.WellKnownChain.rococo_v2_2)
+    await provider.connect()
+  } else {
+    // fallback to local_api
+    provider = new WsProvider(socket)
+  }
+  const _api = new ApiPromise({ provider, jsonrpc })
 
   // Set listeners for disconnection and reconnection event.
   _api.on('connected', () => {
