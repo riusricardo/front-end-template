@@ -71,26 +71,13 @@ function Main(props) {
       if (metaType.isPlain) {
         // Do nothing as `paramFields` is already set to []
       } else if (metaType.isMap) {
-        paramFields = [
-          {
-            name: metaType.asMap.key.toString(),
-            type: metaType.asMap.key.toString(),
-            optional: false,
-          },
-        ]
-      } else if (metaType.isDoubleMap) {
-        paramFields = [
-          {
-            name: metaType.asDoubleMap.key1.toString(),
-            type: metaType.asDoubleMap.key1.toString(),
-            optional: false,
-          },
-          {
-            name: metaType.asDoubleMap.key2.toString(),
-            type: metaType.asDoubleMap.key2.toString(),
-            optional: false,
-          },
-        ]
+        paramFields = Object.keys(metaType.asMap['hashers']).map((key) => {
+          return {
+            name: key.toString(),
+            type: metaType.asMap['hashers'][key].toString(),
+            optional: false
+          };
+        }).filter(item => !isNaN(parseInt(item.name)));
       }
     } else if (interxType === 'EXTRINSIC') {
       const metaArgs = api.tx[palletRpc][callable].meta.args
