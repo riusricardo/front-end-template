@@ -1,0 +1,40 @@
+FROM node:gallium-alpine AS builder
+
+ARG NODE_ENV=${NODE_ENV}
+ARG PORT_NGINX=${PORT_NGINX}
+ARG PUBLIC_URL=${PUBLIC_URL}
+ARG APP_PATH=/app
+ENV PUBLIC_URL=${PUBLIC_URL}
+ENV PATH=${APP_PATH}/node_modules/.bin:$PATH
+WORKDIR ${APP_PATH}
+
+COPY package.json .
+
+RUN apk update && apk add --update git && rm -rf /var/cache/apk/*
+RUN corepack enable \
+    && corepack prepare yarn@stable --activate \
+    && yarn set version 3.1.1 \
+    && yarn plugin import interactive-tools \
+    && echo -e "nodeLinker: node-modules\n\n$(cat ${APP_PATH}/.yarnrc.yml)" > ${APP_PATH}/.yarnrc.yml \
+    && yarn
+
+COPY . .
+
+RUN NODE_ENV=${NODE_ENV} yarn build
+
+# ===========================================================
+FROM nginx:stable-alpine
+
+ARG APP_PATH=/app
+ARG NGINX_PATH=/usr/share/nginx/html
+ARG PUBLIC_URL=${PUBLIC_URL}
+ENV PUBLIC_URL=${PUBLIC_URL}
+WORKDIR ${NGINX_PATH}
+
+COPY --from=builder ${APP_PATH}/docker/nginx.conf /etc/nginx/nginx.conf
+COPY --from=builder ${APP_PATH}/build/index.html ${NGINX_PATH}/index.html
+COPY --from=builder ${APP_PATH}/build ${NGINX_PATH}
+
+EXPOSE ${PORT_NGINX}
+
+CMD ["nginx", "-g", "daemon off;"]

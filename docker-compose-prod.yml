@@ -1,0 +1,23 @@
+version: "3.8"
+services:
+  prod:
+    container_name: ${APP_NAME}-prod
+    restart: always
+    build:
+      context: "."
+      dockerfile: ./docker/Dockerfile.prod
+      args:
+        - NODE_ENV=${NODE_ENV}
+        - PORT_NGINX=${PORT_NGINX}
+        - PORT_PROD=${PORT_PROD}
+        - PUBLIC_URL=${PUBLIC_URL}
+    volumes:
+      - ./:/app:delegated
+      - ignore:/app/node_modules
+    ports:
+      - ${PORT_PROD}:${PORT_NGINX}
+    env_file:
+      - .env
+
+volumes:
+  ignore:

@@ -1,0 +1,25 @@
+FROM node:gallium-alpine
+
+ARG APP_NAME=${APP_NAME}
+ARG APP_PATH=/app/${APP_NAME}
+ARG PORT=${PORT}
+
+ENV PATH=${APP_PATH}/node_modules/.bin:$PATH
+
+WORKDIR ${APP_PATH}
+
+COPY package.json .
+
+RUN apk update && apk add --update git && rm -rf /var/cache/apk/*
+RUN corepack enable \
+    && corepack prepare yarn@stable --activate \
+    && yarn set version 3.1.1 \
+    && yarn plugin import interactive-tools \
+    && echo -e "nodeLinker: node-modules\n\n$(cat ${APP_PATH}/.yarnrc.yml)" > ${APP_PATH}/.yarnrc.yml \
+    && yarn
+
+COPY . .
+
+EXPOSE ${PORT}
+
+CMD ["yarn", "run", "start"]

@@ -1,0 +1,14 @@
+# items that do not need to be in a Docker image as they
+# are not used by the build system
+.circleci/
+.git/
+docker/Dockerfile.*
+.dockerignore
+.env
+.gitignore
+README.md
+docker-*
+
+# items that may be built during Docker image creation
+build/
+node_modules/
